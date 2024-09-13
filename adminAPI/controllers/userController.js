@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
-const mongoose = require('mongoose');
 
 // Generate token
 const generateToken = (id) => {
@@ -27,11 +26,11 @@ const authorizeUser = (req, res, next) => {
 // @route POST /api/users
 // @access Public
 const registerUser = asyncHandler(async (req, res) => {
-    const { name, email, password } = req.body;
+    const { firstName, secondName, middleInitial, email, password, course } = req.body;
 
-    if (!name || !email || !password) {
+    if (!firstName || !secondName || !email || !password || !course) {
         res.status(400);
-        throw new Error('Please enter all fields');
+        throw new Error('Please enter all required fields');
     }
 
     // Password validation
@@ -55,21 +54,26 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // Create User
     const user = await User.create({
-        name,
+        firstName,
+        secondName,
+        middleInitial, // Optional
         email,
         password: hashedPassword,
+        course,
     });
 
     if (user) {
         res.status(201).json({
             _id: user._id,
-            name: user.name,
+            firstName: user.firstName,
+            secondName: user.secondName,
             email: user.email,
+            course: user.course,
             token: generateToken(user._id),
         });
     } else {
         res.status(400);
-        throw new Error('Invalid Users');
+        throw new Error('Invalid user data');
     }
 });
 
@@ -85,8 +89,10 @@ const loginUser = asyncHandler(async (req, res) => {
     if (user && (await bcrypt.compare(password, user.password))) {
         const userData = {
             _id: user._id,
-            name: user.name,
+            firstName: user.firstName,
+            secondName: user.secondName,
             email: user.email,
+            course: user.course,
             role: user.role, // Include the user's role in the response
             token: generateToken(user._id),
         };
@@ -94,7 +100,7 @@ const loginUser = asyncHandler(async (req, res) => {
         res.json(userData);
     } else {
         res.status(400);
-        throw new Error('Invalid Credentials');
+        throw new Error('Invalid credentials');
     }
 });
 
@@ -139,7 +145,7 @@ const readAllUsersWithRoles = asyncHandler(async (req, res) => {
   }
 
   // Fetch all users with their roles excluding admin role
-  const users = await User.find({ role: { $ne: 'admin' } }).select('_id name email role');
+  const users = await User.find({ role: { $ne: 'admin' } }).select('_id firstName secondName email role course');
 
   res.status(200).json(users);
 });
@@ -166,12 +172,13 @@ const getUserById = asyncHandler(async (req, res) => {
 
     res.status(200).json(user);
 });
+
 // @desc Update user by ID
 // @route PUT /api/users/:id
 // @access Private
 const updateUser = asyncHandler(async (req, res) => {
     const userId = req.params.id;
-    const { name, email, password } = req.body;
+    const { firstName, secondName, middleInitial, email, password, course } = req.body;
 
     // Check if the logged-in user is requesting their own data
     if (req.user._id.toString() !== userId) {
@@ -188,8 +195,12 @@ const updateUser = asyncHandler(async (req, res) => {
     }
 
     // Update user information
-    user.name = name || user.name;
+    user.firstName = firstName || user.firstName;
+    user.secondName = secondName || user.secondName;
+    user.middleInitial = middleInitial || user.middleInitial;
     user.email = email || user.email;
+    user.course = course || user.course;
+    
     if (password) {
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(password, salt);
@@ -199,13 +210,14 @@ const updateUser = asyncHandler(async (req, res) => {
 
     res.status(200).json({
         _id: updatedUser._id,
-        name: updatedUser.name,
+        firstName: updatedUser.firstName,
+        secondName: updatedUser.secondName,
+        middleInitial: updatedUser.middleInitial,
         email: updatedUser.email,
+        course: updatedUser.course,
         role: updatedUser.role, // Keep role in the response, but do not allow it to be updated
     });
 });
-
-
 
 // @desc Delete user by ID (only accessible by admins)
 // @route DELETE /api/users/:id
@@ -230,7 +242,6 @@ const deleteUser = asyncHandler(async (req, res) => {
     res.status(200).json({ message: 'User deleted successfully' });
 });
 
-
 module.exports = {
     registerUser,
     loginUser,
@@ -241,4 +252,3 @@ module.exports = {
     getUserById,
     updateUser,
 };
-
