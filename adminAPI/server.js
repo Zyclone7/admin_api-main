@@ -1,32 +1,34 @@
-const path = require('path');
+require('dotenv').config();
 const express = require('express');
-const colors = require('colors');
-const dotenv = require('dotenv').config();
-const { errorHandler } = require('./middleware/errorMiddleware');
-const connectDB = require('./config/db');
 const cors = require('cors');
-const morgan = require('morgan'); // Import Morgan
+const bodyParser = require('body-parser');
+const colors = require('colors');
+const morgan = require('morgan'); // Import morgan for logging
+const connectDB = require('./config/db');
+const { errorHandler } = require('./middleware/errorMiddleware');
 const port = process.env.PORT || 5001;
 
+// Initialize DB
 connectDB();
 
 const app = express();
 
-// Use Morgan for HTTP request logging
-app.use(morgan('dev'));
-
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cors());
+app.use(morgan('dev')); // Use morgan for HTTP request logging
 
-app.use('/api/users', require('./routes/userRoutes'));
-app.use(express.static(path.join(__dirname, 'public')));
+// Routes
+app.use('/api/admin', require('./routes/userRoutes'));
 
-
+// Error Handling Middleware
 app.use(errorHandler);
 
+// Start Server
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`.green.bold);
+  console.log(`Server running on http://localhost:${port}`.green.bold);
   console.log(`Running USERS API.......... :D`.blue.bold);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`.yellow.bold);
 });

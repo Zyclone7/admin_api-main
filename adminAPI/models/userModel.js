@@ -1,31 +1,18 @@
 const mongoose = require('mongoose');
 
-const userSchema = mongoose.Schema({
-    name: {
-        type: String,
-        required: [true, 'Name is required'],
+const userSchema = mongoose.Schema(
+    {
+        firstName: { type: String, required: true },
+        secondName: { type: String, required: true },
+        middleInitial: { type: String },
+        email: { type: String, required: true, unique: true },
+        password: { type: String, required: true },
+        course: { type: String, required: true },
+        courseId: { type: String, required: true }, // New field for course ID
+        idNo: { type: String, required: true, unique: true },
+        role: { type: String, default: 'user' }
     },
-    email: {
-        type: String,
-        required: [true, 'Email is required'],
-        unique: true,
-        trim: true,
-        lowercase: true,
-        match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please fill a valid email address'],
-    },
-    password: {
-        type: String,
-        required: [true, 'Password is required'],
-        minlength: [8, 'Password must be at least 8 characters long'],
-    },
-    role: {
-        type: String,
-        enum: ['users'], // Add 'admin' as a valid role
-        default: 'users', // Default role is 'user'
-    },
-},
-{
-    timestamps: true,
-});
+    { timestamps: true }
+);
 
 module.exports = mongoose.model('User', userSchema);
